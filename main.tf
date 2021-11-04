@@ -192,6 +192,7 @@ resource "aws_instance" "build-instance" {
     timeout = "600"
     agent = false
     private_key = tls_private_key.terraform-bootstrap-sshkey.private_key_pem
+    host = aws_instance.build-instance.private_ip
   }
 
   provisioner "remote-exec" {
