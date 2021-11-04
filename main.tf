@@ -10,9 +10,9 @@
 # establish the AWS provider
 # ===
 provider "aws" {
-  access_key = "${var.aws_access_key_id}"
-  secret_key = "${var.aws_secret_access_key}"
-  region     = "${var.aws_region}"
+  access_key = var.aws_access_key_id
+  secret_key = var.aws_secret_access_key
+  region     = var.aws_region
 }
 
 # local test to confirm aws cli is installed and has operational AWS credentials
@@ -49,7 +49,7 @@ resource "random_string" "build-id" {
   number = true
   special = false
 
-  depends_on = [ "null_resource.local-tests" ]
+  depends_on = [ null_resource.local-tests ]
 }
 
 # Generate a temporary ssh keypair to bootstrap this instance
@@ -58,7 +58,7 @@ resource "tls_private_key" "terraform-bootstrap-sshkey" {
   algorithm = "RSA"
   rsa_bits = "4096"
 
-  depends_on = ["null_resource.local-tests"]
+  depends_on = [null_resource.local-tests]
 }
 
 # attach the temporary sshkey to the provider account for this image build
@@ -68,9 +68,9 @@ resource "tls_private_key" "terraform-bootstrap-sshkey" {
 # ===
 resource "aws_key_pair" "terraform-bootstrap-sshkey" {
   key_name = "terraform-bootstrap-sshkey-${random_string.build-id.result}"
-  public_key = "${tls_private_key.terraform-bootstrap-sshkey.public_key_openssh}"
+  public_key = tls_private_key.terraform-bootstrap-sshkey.public_key_openssh
 
-  depends_on = [ "random_string.build-id", "tls_private_key.terraform-bootstrap-sshkey" ]
+  depends_on = [ random_string.build-id, tls_private_key.terraform-bootstrap-sshkey ]
 }
 
 # FreeBSD uses configinit (not cloud-init) which interprets the user-data based on the first few bytes
@@ -80,7 +80,7 @@ data "template_file" "instance-userdata" {
   template = "#!/bin/sh\necho -n '${base64gzip(file("${path.module}/data/user-data-aws.sh"))}' | b64decode -r | gunzip | /bin/sh"
   vars = { }
 
-  depends_on = ["null_resource.local-tests"]
+  depends_on = [null_resource.local-tests]
 }
 
 # create a VPC with all the required networking arrangements, we cannot rely on a "default" VPC being appropriate
@@ -89,60 +89,60 @@ resource "aws_vpc" "opnsense-cloud-builder" {
   cidr_block       = "192.168.42.0/24"
   enable_dns_support = true
 
-  tags {
+  tags = {
     Name = "opnsense-cloud-builder-${random_string.build-id.result}"
     Terraform = "true"
   }
-  depends_on = ["null_resource.local-tests"]
+  depends_on = [null_resource.local-tests]
 }
 
 resource "aws_subnet" "opnsense-cloud-builder-subnet" {
-  vpc_id     = "${aws_vpc.opnsense-cloud-builder.id}"
+  vpc_id     = aws_vpc.opnsense-cloud-builder.id
   cidr_block = "192.168.42.0/28"
   map_public_ip_on_launch = true
 
-  tags {
+  tags = {
     Name = "opnsense-cloud-builder-${random_string.build-id.result}"
     Terraform = "true"
   }
-  depends_on = ["aws_vpc.opnsense-cloud-builder"]
+  depends_on = [aws_vpc.opnsense-cloud-builder]
 }
 
 resource "aws_internet_gateway" "opnsense-cloud-builder-gw" {
-  vpc_id     = "${aws_vpc.opnsense-cloud-builder.id}"
+  vpc_id     = aws_vpc.opnsense-cloud-builder.id
 
-  tags {
+  tags = {
     Name = "opnsense-cloud-builder-${random_string.build-id.result}"
     Terraform = "true"
   }
-  depends_on = ["aws_vpc.opnsense-cloud-builder"]
+  depends_on = [aws_vpc.opnsense-cloud-builder]
 }
 
 resource "aws_route_table" "opnsense-cloud-builder-route" {
-  vpc_id = "${aws_vpc.opnsense-cloud-builder.id}"
+  vpc_id = aws_vpc.opnsense-cloud-builder.id
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = "${aws_internet_gateway.opnsense-cloud-builder-gw.id}"
+    gateway_id = aws_internet_gateway.opnsense-cloud-builder-gw.id
   }
 
-  tags {
+  tags = {
     Name = "opnsense-cloud-builder-${random_string.build-id.result}"
     Terraform = "true"
   }
-  depends_on = ["aws_internet_gateway.opnsense-cloud-builder-gw"]
+  depends_on = [aws_internet_gateway.opnsense-cloud-builder-gw]
 }
 
 resource "aws_route_table_association" "opnsense-cloud-builder-route-association" {
-  subnet_id      = "${aws_subnet.opnsense-cloud-builder-subnet.id}"
-  route_table_id = "${aws_route_table.opnsense-cloud-builder-route.id}"
+  subnet_id      = aws_subnet.opnsense-cloud-builder-subnet.id
+  route_table_id = aws_route_table.opnsense-cloud-builder-route.id
 
-  depends_on = ["aws_route_table.opnsense-cloud-builder-route", "aws_subnet.opnsense-cloud-builder-subnet"]
+  depends_on = [aws_route_table.opnsense-cloud-builder-route, aws_subnet.opnsense-cloud-builder-subnet]
 }
 
 resource "aws_security_group" "opnsense-cloud-builder-allow" {
   name        = "opnsense-cloud-builder-allow-all"
   description = "opnsense-cloud-builder-allow-all"
-  vpc_id      = "${aws_vpc.opnsense-cloud-builder.id}"
+  vpc_id      = aws_vpc.opnsense-cloud-builder.id
   ingress {
     from_port   = 22
     to_port     = 22
@@ -155,7 +155,7 @@ resource "aws_security_group" "opnsense-cloud-builder-allow" {
     protocol        = "-1"
     cidr_blocks     = ["0.0.0.0/0"]
   }
-  tags {
+  tags = {
     Name = "opnsense-cloud-builder-${random_string.build-id.result}"
     Terraform = "true"
   }
@@ -165,33 +165,33 @@ data "aws_ami" "ami-search" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["${var.aws_ami_name_filter}"]
+    values = [var.aws_ami_name_filter]
   }
   filter {
     name   = "virtualization-type"
-    values = ["${var.aws_ami_virtualization_filter}"]
+    values = [var.aws_ami_virtualization_filter]
   }
-  owners = ["${var.aws_ami_owners_filter}"]
+  owners = [var.aws_ami_owners_filter]
 }
 
 # start this temporary build instance
 # ===
 resource "aws_instance" "build-instance" {
-  ami = "${data.aws_ami.ami-search.id}"
-  instance_type = "${var.aws_instance_type}"
-  subnet_id = "${aws_subnet.opnsense-cloud-builder-subnet.id}"
-  vpc_security_group_ids = [ "${aws_security_group.opnsense-cloud-builder-allow.id}" ]
-  key_name = "${aws_key_pair.terraform-bootstrap-sshkey.key_name}"
+  ami = data.aws_ami.ami-search.id
+  instance_type = var.aws_instance_type
+  subnet_id = aws_subnet.opnsense-cloud-builder-subnet.id
+  vpc_security_group_ids = [ aws_security_group.opnsense-cloud-builder-allow.id ]
+  key_name = aws_key_pair.terraform-bootstrap-sshkey.key_name
   source_dest_check = false
 
-  user_data = "${data.template_file.instance-userdata.rendered}"
+  user_data = data.template_file.instance-userdata.rendered
 
   connection {
     type = "ssh"
     user = "root"
     timeout = "600"
     agent = false
-    private_key = "${tls_private_key.terraform-bootstrap-sshkey.private_key_pem}"
+    private_key = tls_private_key.terraform-bootstrap-sshkey.private_key_pem
   }
 
   provisioner "remote-exec" {
@@ -202,9 +202,9 @@ resource "aws_instance" "build-instance" {
     ]
   }
 
-  depends_on = [ "aws_route_table_association.opnsense-cloud-builder-route-association" ]
+  depends_on = [ aws_route_table_association.opnsense-cloud-builder-route-association ]
 
-  tags {
+  tags = {
     Name = "opnsense-cloud-image-builder-${random_string.build-id.result}"
     Terraform = "true"
   }
@@ -213,41 +213,41 @@ resource "aws_instance" "build-instance" {
 # render the config.xml with an (optionally different from default: opnsense) root passwd of the image builders choice
 # ===
 data "template_file" "opnsense-config-xml" {
-  template = "${file("${path.module}/data/config-aws.xml")}"
-  vars {
-    opnsense_root_passwd_data = "${bcrypt(var.root_passwd, 10)}"
+  template = file("${path.module}/data/config-aws.xml")
+  vars = {
+    opnsense_root_passwd_data = bcrypt(var.root_passwd, 10)
   }
 }
 
 # render the opnsense-syshook script, which implements the OPNsense <> Cloud-Provider functionality required
 # ===
 data "template_file" "opnsense-syshook-sh" {
-  template = "${file("${path.module}/data/opnsense-syshook-aws.sh")}"
+  template = file("${path.module}/data/opnsense-syshook-aws.sh")
   vars = { }
 }
 
 # render the (one time) cloudinit-bootstrap script used to bring this instance to life for the opnsense-bootstrap build
 # ===
 data "template_file" "opnsense-install-sh" {
-  template = "${file("${path.module}/data/opnsense-install.sh")}"
-  vars {
-    opnsense_release = "${var.opnsense_release}"
-    opnsense_config_data = "${base64gzip(data.template_file.opnsense-config-xml.rendered)}"
-    opnsense_syshook_data = "${base64gzip(data.template_file.opnsense-syshook-sh.rendered)}"
+  template = file("${path.module}/data/opnsense-install.sh")
+  vars = {
+    opnsense_release = var.opnsense_release
+    opnsense_config_data = base64gzip(data.template_file.opnsense-config-xml.rendered)
+    opnsense_syshook_data = base64gzip(data.template_file.opnsense-syshook-sh.rendered)
   }
 }
 
 # install opnsense via a remote ssh call
 resource "null_resource" "opnsense-install-action" {
-  count = "${var.do_opnsense_install}"
+  count = var.do_opnsense_install
 
   connection {
-    host = "${aws_instance.build-instance.public_ip}"
+    host = aws_instance.build-instance.public_ip
     type = "ssh"
     user = "root"
     timeout = "600"
     agent = false
-    private_key = "${tls_private_key.terraform-bootstrap-sshkey.private_key_pem}"
+    private_key = tls_private_key.terraform-bootstrap-sshkey.private_key_pem
   }
 
   provisioner "remote-exec" {
@@ -256,21 +256,21 @@ resource "null_resource" "opnsense-install-action" {
     ]
   }
 
-  depends_on = [ "aws_instance.build-instance" ]
+  depends_on = [ aws_instance.build-instance ]
 }
 
 # do a final cleanup just before the instance does a shutdown-poweroff
 # ===
 resource "null_resource" "cleanup-shutdown-action" {
-  count = "${var.do_opnsense_install * var.do_cleanup_shutdown}"
+  count = var.do_opnsense_install * var.do_cleanup_shutdown
 
   connection {
-    host = "${aws_instance.build-instance.public_ip}"
+    host = aws_instance.build-instance.public_ip
     type = "ssh"
     user = "root"
     timeout = "60"
     agent = false
-    private_key = "${tls_private_key.terraform-bootstrap-sshkey.private_key_pem}"
+    private_key = tls_private_key.terraform-bootstrap-sshkey.private_key_pem
   }
 
   provisioner "remote-exec" {
@@ -284,13 +284,13 @@ resource "null_resource" "cleanup-shutdown-action" {
     ]
   }
 
-  depends_on = [ "null_resource.opnsense-install-action" ]
+  depends_on = [ null_resource.opnsense-install-action ]
 }
 
 # query the provider API until this instance is no longer active
 # ===
 resource "null_resource" "instance-wait-poweroff" {
-  count = "${var.do_opnsense_install * var.do_cleanup_shutdown}"
+  count = var.do_opnsense_install * var.do_cleanup_shutdown
 
   provisioner "local-exec" {
     command = <<EOF
@@ -303,13 +303,13 @@ resource "null_resource" "instance-wait-poweroff" {
     EOF
   }
 
-  depends_on = [ "null_resource.cleanup-shutdown-action" ]
+  depends_on = [ null_resource.cleanup-shutdown-action ]
 }
 
 # establish local var values
 # ===
 locals {
-  build_id = "${random_string.build-id.result}"
+  build_id = random_string.build-id.result
   image_name = "OPNsense ${var.opnsense_release} - ${replace(replace(replace(replace(timestamp(), ":", ""),"-",""),"Z",""),"T","Z")}"
   image_action_outfile = "/tmp/opnsense-${local.build_id}-image-action.json"
   image_action_idfile = "/tmp/opnsense-${local.build_id}-image-action.id"
@@ -318,7 +318,7 @@ locals {
 # take a image of this instance via the AWS API so that it occurs outside Terraform and will not later be destroyed
 # ===
 resource "null_resource" "instance-snapshot-action" {
-  count = "${var.do_opnsense_install * var.do_cleanup_shutdown * var.do_image}"
+  count = var.do_opnsense_install * var.do_cleanup_shutdown * var.do_image
 
   provisioner "local-exec" {
     command = <<EOF
@@ -334,13 +334,13 @@ resource "null_resource" "instance-snapshot-action" {
     EOF
   }
 
-  depends_on = [ "null_resource.instance-wait-poweroff" ]
+  depends_on = [ null_resource.instance-wait-poweroff ]
 }
 
 # Tag the AMI with a name
 # ===
 resource "null_resource" "instance-snapshot-tag" {
-  count = "${var.do_opnsense_install * var.do_cleanup_shutdown * var.do_image}"
+  count = var.do_opnsense_install * var.do_cleanup_shutdown * var.do_image
 
   provisioner "local-exec" {
     command = <<EOF
@@ -352,14 +352,14 @@ resource "null_resource" "instance-snapshot-tag" {
     EOF
   }
 
-  depends_on = [ "null_resource.instance-snapshot-action" ]
+  depends_on = [ null_resource.instance-snapshot-action ]
 }
 
 
 # force some Terraform log output so it is a little easier to immediately observe the final status
 # ===
 resource "null_resource" "action-status" {
-  count = "${var.do_opnsense_install * var.do_cleanup_shutdown * var.do_image}"
+  count = var.do_opnsense_install * var.do_cleanup_shutdown * var.do_image
 
   provisioner "local-exec" {
     command = <<EOF
@@ -374,5 +374,5 @@ resource "null_resource" "action-status" {
       echo ""
     EOF
   }
-  depends_on = [ "null_resource.instance-snapshot-action" ]
+  depends_on = [ null_resource.instance-snapshot-action ]
 }
