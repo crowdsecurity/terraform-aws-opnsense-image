@@ -23,6 +23,18 @@ variable "aws_secret_access_key" {
   description = "Your AWS API secret key."
 }
 
+variable "aws_profile" {
+  description = "Your AWS profile."
+}
+
+variable "aws_session_token" {
+  description = "Session token (MFA)."
+}
+
+variable "aws_role_arn" {
+  description = "Role to assume."
+}
+
 variable "opnsense_release" {
   description = "The OPNsense release to target for this image build"
 }

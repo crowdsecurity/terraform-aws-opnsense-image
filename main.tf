@@ -13,6 +13,11 @@ provider "aws" {
   access_key = var.aws_access_key_id
   secret_key = var.aws_secret_access_key
   region     = var.aws_region
+  profile = var.aws_profile
+  token = var.aws_session_token
+  assume_role {
+    role_arn = var.aws_role_arn
+  }
 }
 
 # local test to confirm aws cli is installed and has operational AWS credentials
@@ -30,7 +35,7 @@ resource "null_resource" "local-tests" {
       else
         export AWS_ACCESS_KEY_ID=${var.aws_access_key_id}
         export AWS_SECRET_ACCESS_KEY=${var.aws_secret_access_key}
-        aws --region=${var.aws_region} ec2 describe-regions > /dev/null
+        aws --region=${var.aws_region} --profile ${var.aws_profile} ec2 describe-regions > /dev/null
       fi
       if [ $? -gt 0 ]; then
         echo 'problem using awscli tools to confirm access'
@@ -192,7 +197,7 @@ resource "aws_instance" "build-instance" {
     timeout = "600"
     agent = false
     private_key = tls_private_key.terraform-bootstrap-sshkey.private_key_pem
-    host = aws_instance.build-instance.private_ip
+    host = aws_instance.build-instance.public_ip
   }
 
   provisioner "remote-exec" {
@@ -297,7 +302,7 @@ resource "null_resource" "instance-wait-poweroff" {
     command = <<EOF
       export AWS_ACCESS_KEY_ID=${var.aws_access_key_id}
       export AWS_SECRET_ACCESS_KEY=${var.aws_secret_access_key}
-      while [ $(aws --region=${var.aws_region} ec2 describe-instance-status --instance-ids ${aws_instance.build-instance.id} | jq -r .InstanceStatuses[0].InstanceState.Name) = 'running' ]; do
+      while [ $(aws --region=${var.aws_region} --profile ${var.aws_profile} ec2 describe-instance-status --instance-ids ${aws_instance.build-instance.id} | jq -r .InstanceStatuses[0].InstanceState.Name) = 'running' ]; do
           echo 'Waiting for instance ${aws_instance.build-instance.id} to stop running...'
           sleep 3
       done
@@ -326,7 +331,7 @@ resource "null_resource" "instance-snapshot-action" {
       sleep 5
       export AWS_ACCESS_KEY_ID=${var.aws_access_key_id}
       export AWS_SECRET_ACCESS_KEY=${var.aws_secret_access_key}
-      aws --region=${var.aws_region} ec2 create-image \
+      aws --region=${var.aws_region} --profile ${var.aws_profile} ec2 create-image \
           --instance-id ${aws_instance.build-instance.id} \
           --no-reboot \
           --name "${local.image_name}" \
@@ -347,7 +352,7 @@ resource "null_resource" "instance-snapshot-tag" {
     command = <<EOF
       export AWS_ACCESS_KEY_ID=${var.aws_access_key_id}
       export AWS_SECRET_ACCESS_KEY=${var.aws_secret_access_key}
-      aws --region=${var.aws_region} ec2 create-tags \
+      aws --region=${var.aws_region} --profile ${var.aws_profile} ec2 create-tags \
           --resources ${file(local.image_action_idfile)} \
           --tags Key=Name,Value="${local.image_name}"
     EOF
