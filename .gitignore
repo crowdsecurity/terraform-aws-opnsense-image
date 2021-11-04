@@ -1,3 +1,6 @@
 
 _dev/
 .idea
+.terraform
+.terraform.lock*
+.tfvars
