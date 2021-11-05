@@ -12,13 +12,15 @@
 #   not get run again in subsequent boots of the OPNsense image created
 
 # Set some required resource source locations
-opnsense_bootstrap_uri="https://raw.githubusercontent.com/opnsense/update/${opnsense_release}/bootstrap/opnsense-bootstrap.sh"
+opnsense_bootstrap_uri="https://raw.githubusercontent.com/opnsense/update/${opnsense_release}/bootstrap/opnsense-bootstrap.sh.in"
 
 # install recent certificate root authority certs so we can more-safely fetch from the bootstrap source
 pkg install -y ca_root_nss
 
 # fetch the OPNsense bootstrap script
 fetch -o /tmp/opnsense-bootstrap.sh "$opnsense_bootstrap_uri"
+
+sed -i -e "s/%%RELEASE%%/${opnsense_release}/" /tmp/opnsense-bootstrap.sh
 
 # remove the reboot at the end of the opnsense-bootstrap.sh script
 sed -i -e '/.*reboot/s/^.*$/#opnsense-cloud-image-builder# reboot/' /tmp/opnsense-bootstrap.sh
@@ -44,13 +46,13 @@ __freebsd_static_package_install()
 }
 
 # The release is named statically so explicit version numbers can be safely used - OPNsense may upgrade them later
-freebsd_package_base="https://pkg.freebsd.org/FreeBSD:11:`uname -m`/release_2/All"
+freebsd_package_base="https://pkg.freebsd.org/FreeBSD:12:`uname -m`/latest/All"
 
-__freebsd_static_package_install "$freebsd_package_base/oniguruma-6.8.1.txz"
-__freebsd_static_package_install "$freebsd_package_base/jq-1.5_3.txz"
-__freebsd_static_package_install "$freebsd_package_base/libgpg-error-1.28.txz"
-__freebsd_static_package_install "$freebsd_package_base/libgcrypt-1.8.2.txz"
-__freebsd_static_package_install "$freebsd_package_base/libxslt-1.1.32.txz"
+#__freebsd_static_package_install "$freebsd_package_base/oniguruma-6.9.7.1.txz"  # already installed
+__freebsd_static_package_install "$freebsd_package_base/jq-1.6.txz"
+__freebsd_static_package_install "$freebsd_package_base/libgpg-error-1.42.txz"
+__freebsd_static_package_install "$freebsd_package_base/libgcrypt-1.9.4.txz"
+__freebsd_static_package_install "$freebsd_package_base/libxslt-1.1.34_2.txz"
 __freebsd_static_package_install "$freebsd_package_base/xmlstarlet-1.6.1.txz"
 
 exit 0

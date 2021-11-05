@@ -37,6 +37,7 @@ variable "aws_role_arn" {
 
 variable "opnsense_release" {
   description = "The OPNsense release to target for this image build"
+  default = "21.7"
 }
 
 # variables - with defined defaults
@@ -54,7 +55,7 @@ variable "hostname" {
 
 variable "aws_ami_name_filter" {
   description = "Filter by name attribute to use to identify the most recent FreeBSD AMI"
-  default = "FreeBSD 11.2-STABLE-amd64-*"   # this will require updates as OPNsense evolves with new versions
+  default = "FreeBSD 12.2-RELEASE-amd64-*"   # this will require updates as OPNsense evolves with new versions
 }
 
 variable "aws_ami_virtualization_filter" {
@@ -64,7 +65,7 @@ variable "aws_ami_virtualization_filter" {
 
 variable "aws_ami_owners_filter" {
   description = "Filter by owners attribute to use to identify the most recent FreeBSD AMI"
-  default = "118940168514" # NB: 118940168514 = FreeBSD
+  default = "679593333241" # NB: 679593333241 = FreeBSD
 }
 
 variable "aws_instance_type" {
