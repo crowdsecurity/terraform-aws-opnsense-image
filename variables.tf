@@ -70,7 +70,7 @@ variable "aws_ami_owners_filter" {
 
 variable "aws_instance_type" {
   description = "The instance type to use for the aws-instance used on this build."
-  default = "t2.medium"
+  default = "t3.medium"
 }
 
 variable "do_opnsense_install" {
