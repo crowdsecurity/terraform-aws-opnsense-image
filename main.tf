@@ -198,6 +198,12 @@ resource "aws_instance" "build-instance" {
 
   user_data = data.template_file.instance-userdata.rendered
 
+  ebs_block_device {
+    device_name = "/dev/sda1"
+    volume_type = "gp3"
+    # volume_size = 15
+  }
+
   connection {
     type = "ssh"
     user = "ec2-user"
