@@ -50,7 +50,7 @@ freebsd_package_base="https://pkg.freebsd.org/FreeBSD:12:`uname -m`/latest/All"
 
 #__freebsd_static_package_install "$freebsd_package_base/oniguruma-6.9.7.1.txz"  # already installed
 __freebsd_static_package_install "$freebsd_package_base/jq-1.6.txz"
-__freebsd_static_package_install "$freebsd_package_base/libgpg-error-1.42.txz"
+__freebsd_static_package_install "$freebsd_package_base/libgpg-error-1.43.txz"
 __freebsd_static_package_install "$freebsd_package_base/libgcrypt-1.9.4.txz"
 __freebsd_static_package_install "$freebsd_package_base/libxslt-1.1.34_2.txz"
 __freebsd_static_package_install "$freebsd_package_base/xmlstarlet-1.6.1.txz"
