@@ -37,7 +37,7 @@ variable "aws_role_arn" {
 
 variable "opnsense_release" {
   description = "The OPNsense release to target for this image build"
-  default = "21.7"
+  default = "21.7.7"
 }
 
 # variables - with defined defaults
